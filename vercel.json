@@ -1,0 +1,7 @@
+{
+  "version": 2,
+  "functions": {
+    "api/click.js":   { "memory": 128, "maxDuration": 10 },
+    "api/confirm.js": { "memory": 128, "maxDuration": 10 }
+  }
+}
