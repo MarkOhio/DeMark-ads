@@ -13,6 +13,7 @@ const sb = createClient(
 // Allowed origins — add every domain that runs ad.js
 const ALLOWED_ORIGINS = [
   "https://demarktv.com",
+  "https://markohio.github.io/",
   "https://www.demarktv.com",
   "https://markohio.github.io/Ad-test-site/",
   // add more here
