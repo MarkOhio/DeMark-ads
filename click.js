@@ -14,6 +14,7 @@ const sb = createClient(
 const ALLOWED_ORIGINS = [
   "https://demarktv.com",
   "https://www.demarktv.com",
+  "https://markohio.github.io/Ad-test-site/",
   // add more here
 ];
 
