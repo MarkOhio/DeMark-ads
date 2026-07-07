@@ -1,0 +1,1223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>DeMARK Ads</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  /* ── TOKENS ─────────────────────────────────────────────── */
+  :root {
+    --bg:       #0a0a0a;
+    --surface:  #111111;
+    --border:   #1e1e1e;
+    --muted:    #2a2a2a;
+    --text:     #e8e8e8;
+    --sub:      #666;
+    --accent:   #c8a96e;       /* gold — DeMARK brand */
+    --accent2:  #8b6f3e;
+    --danger:   #c0392b;
+    --success:  #27ae60;
+    --radius:   6px;
+    --font:     'Inter', system-ui, sans-serif;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font);
+    font-size: 14px;
+    line-height: 1.5;
+    min-height: 100vh;
+  }
+
+  /* ── AUTH SCREEN ─────────────────────────────────────────── */
+  #auth-screen {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    padding: 24px;
+  }
+
+  .auth-box {
+    width: 100%;
+    max-width: 360px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 40px 32px;
+  }
+
+  .auth-logo {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 8px;
+  }
+
+  .auth-title {
+    font-size: 22px;
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 32px;
+  }
+
+  /* ── LAYOUT ─────────────────────────────────────────────── */
+  #app { display: none; }
+
+  .topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 24px;
+    height: 52px;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+
+  .topbar-brand {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--accent);
+  }
+
+  .topbar-right { display: flex; align-items: center; gap: 12px; }
+
+  .main {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 32px 24px 80px;
+  }
+
+  /* ── TABS ───────────────────────────────────────────────── */
+  .tabs {
+    display: flex;
+    gap: 0;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 32px;
+  }
+
+  .tab-btn {
+    background: none;
+    border: none;
+    border-bottom: 2px solid transparent;
+    color: var(--sub);
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 500;
+    padding: 10px 20px;
+    transition: color 0.15s, border-color 0.15s;
+  }
+
+  .tab-btn.active {
+    color: var(--accent);
+    border-bottom-color: var(--accent);
+  }
+
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; }
+
+  /* ── FORM ───────────────────────────────────────────────── */
+  .section-title {
+    font-size: 16px;
+    font-weight: 600;
+    margin-bottom: 20px;
+    color: var(--text);
+  }
+
+  .form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+
+  @media (max-width: 600px) {
+    .form-grid { grid-template-columns: 1fr; }
+  }
+
+  .field { display: flex; flex-direction: column; gap: 6px; }
+  .field.full { grid-column: 1 / -1; }
+
+  label {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--sub);
+  }
+
+  input[type="text"],
+  input[type="email"],
+  input[type="password"],
+  input[type="url"] {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    color: var(--text);
+    font-size: 14px;
+    height: 40px;
+    outline: none;
+    padding: 0 12px;
+    transition: border-color 0.15s;
+    width: 100%;
+  }
+
+  input:focus { border-color: var(--accent); }
+  input::placeholder { color: var(--sub); }
+
+  /* ── UPLOAD ZONES ───────────────────────────────────────── */
+  .upload-zone {
+    align-items: center;
+    background: var(--bg);
+    border: 1px dashed var(--border);
+    border-radius: var(--radius);
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    justify-content: center;
+    min-height: 100px;
+    padding: 16px;
+    position: relative;
+    text-align: center;
+    transition: border-color 0.15s;
+  }
+
+  .upload-zone:hover { border-color: var(--accent); }
+  .upload-zone.has-file { border-color: var(--success); border-style: solid; }
+
+  .upload-zone input[type="file"] {
+    cursor: pointer;
+    height: 100%;
+    left: 0;
+    opacity: 0;
+    position: absolute;
+    top: 0;
+    width: 100%;
+  }
+
+  .upload-icon { color: var(--sub); font-size: 22px; line-height: 1; }
+  .upload-label { color: var(--sub); font-size: 12px; }
+  .upload-filename {
+    color: var(--accent);
+    font-size: 12px;
+    font-weight: 500;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  /* ── ASSET SECTIONS ─────────────────────────────────────── */
+  .asset-group {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    margin-bottom: 12px;
+    overflow: hidden;
+  }
+
+  .asset-group-header {
+    align-items: center;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    padding: 14px 16px;
+    user-select: none;
+  }
+
+  .asset-group-header:hover { background: var(--muted); }
+
+  .asset-group-label {
+    color: var(--text);
+    font-size: 13px;
+    font-weight: 500;
+  }
+
+  .asset-group-badge {
+    background: var(--muted);
+    border-radius: 20px;
+    color: var(--sub);
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    padding: 2px 8px;
+    text-transform: uppercase;
+  }
+
+  .asset-group-badge.filled {
+    background: #1a2e1a;
+    color: var(--success);
+  }
+
+  .asset-group-body {
+    border-top: 1px solid var(--border);
+    display: none;
+    gap: 16px;
+    grid-template-columns: 1fr 1fr;
+    padding: 16px;
+  }
+
+  .asset-group-body.open { display: grid; }
+
+  @media (max-width: 600px) {
+    .asset-group-body { grid-template-columns: 1fr; }
+  }
+
+  /* ── BUTTONS ────────────────────────────────────────────── */
+  .btn {
+    align-items: center;
+    border: none;
+    border-radius: var(--radius);
+    cursor: pointer;
+    display: inline-flex;
+    font-size: 13px;
+    font-weight: 600;
+    gap: 6px;
+    height: 38px;
+    justify-content: center;
+    padding: 0 18px;
+    transition: opacity 0.15s, background 0.15s;
+    white-space: nowrap;
+  }
+
+  .btn:disabled { cursor: not-allowed; opacity: 0.5; }
+  .btn-primary { background: var(--accent); color: #000; }
+  .btn-primary:hover:not(:disabled) { background: #d4b87a; }
+  .btn-ghost { background: var(--muted); color: var(--text); }
+  .btn-ghost:hover:not(:disabled) { background: #333; }
+  .btn-danger { background: transparent; border: 1px solid var(--danger); color: var(--danger); }
+  .btn-danger:hover:not(:disabled) { background: var(--danger); color: #fff; }
+  .btn-sm { font-size: 12px; height: 30px; padding: 0 12px; }
+
+  /* ── TOGGLE ─────────────────────────────────────────────── */
+  .toggle-row {
+    align-items: center;
+    display: flex;
+    gap: 12px;
+    justify-content: space-between;
+    padding: 12px 0;
+  }
+
+  .toggle-label { color: var(--text); font-size: 13px; }
+
+  .toggle {
+    appearance: none;
+    background: var(--muted);
+    border-radius: 12px;
+    cursor: pointer;
+    height: 24px;
+    position: relative;
+    transition: background 0.2s;
+    width: 44px;
+    flex-shrink: 0;
+  }
+
+  .toggle::after {
+    background: #fff;
+    border-radius: 50%;
+    content: '';
+    height: 18px;
+    left: 3px;
+    position: absolute;
+    top: 3px;
+    transition: transform 0.2s;
+    width: 18px;
+  }
+
+  .toggle:checked { background: var(--accent); }
+  .toggle:checked::after { transform: translateX(20px); }
+
+  /* ── AD CARDS ───────────────────────────────────────────── */
+  .ad-list { display: flex; flex-direction: column; gap: 12px; }
+
+  .ad-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px 20px;
+    transition: border-color 0.15s;
+  }
+
+  .ad-card:hover { border-color: var(--muted); }
+  .ad-card.inactive { opacity: 0.5; }
+
+  .ad-card-top {
+    align-items: flex-start;
+    display: flex;
+    gap: 12px;
+    justify-content: space-between;
+  }
+
+  .ad-card-name {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text);
+  }
+
+  .ad-card-url {
+    color: var(--sub);
+    font-size: 12px;
+    margin-top: 2px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 320px;
+  }
+
+  .ad-card-actions { display: flex; gap: 8px; flex-shrink: 0; }
+
+  .ad-card-slots {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 12px;
+  }
+
+  .slot-pill {
+    background: var(--muted);
+    border-radius: 20px;
+    color: var(--sub);
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    padding: 3px 10px;
+    text-transform: uppercase;
+  }
+
+  .slot-pill.filled { background: #1a2e1a; color: var(--success); }
+
+  .ad-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+
+  .ad-status::before {
+    content: '';
+    display: inline-block;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--success);
+  }
+
+  .ad-status.inactive::before { background: var(--sub); }
+
+  /* ── STATS ──────────────────────────────────────────────── */
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    margin-bottom: 28px;
+  }
+
+  @media (max-width: 500px) {
+    .stats-grid { grid-template-columns: 1fr; }
+  }
+
+  .stat-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+  }
+
+  .stat-value {
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--accent);
+    line-height: 1;
+    margin-bottom: 4px;
+  }
+
+  .stat-label {
+    color: var(--sub);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .clicks-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+  }
+
+  .clicks-table th {
+    color: var(--sub);
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    padding: 8px 12px;
+    text-align: left;
+    text-transform: uppercase;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .clicks-table td {
+    color: var(--text);
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .clicks-table tr:last-child td { border-bottom: none; }
+  .clicks-table tr:hover td { background: var(--surface); }
+
+  /* ── TOAST ──────────────────────────────────────────────── */
+  #toast {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--accent);
+    border-radius: var(--radius);
+    bottom: 24px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+    color: var(--text);
+    font-size: 13px;
+    font-weight: 500;
+    opacity: 0;
+    padding: 12px 18px;
+    pointer-events: none;
+    position: fixed;
+    right: 24px;
+    transition: opacity 0.25s;
+    z-index: 9999;
+    max-width: 300px;
+  }
+
+  #toast.show { opacity: 1; }
+  #toast.error { border-left-color: var(--danger); }
+
+  /* ── MISC ───────────────────────────────────────────────── */
+  .divider {
+    border: none;
+    border-top: 1px solid var(--border);
+    margin: 24px 0;
+  }
+
+  .empty-state {
+    color: var(--sub);
+    font-size: 13px;
+    padding: 40px 0;
+    text-align: center;
+  }
+
+  .progress-bar {
+    background: var(--muted);
+    border-radius: 4px;
+    height: 4px;
+    margin-top: 16px;
+    overflow: hidden;
+  }
+
+  .progress-fill {
+    background: var(--accent);
+    height: 100%;
+    width: 0%;
+    transition: width 0.3s;
+  }
+
+  .spinner {
+    animation: spin 0.8s linear infinite;
+    border: 2px solid var(--muted);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    display: inline-block;
+    height: 16px;
+    width: 16px;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .form-actions {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+    margin-top: 24px;
+  }
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════════════════════
+     AUTH SCREEN
+═══════════════════════════════════════════════════════════ -->
+  <div id="auth-screen">
+  <div class="auth-box">
+    <div class="auth-logo">DeMARK</div>
+    <div class="auth-title">Ad Dashboard</div>
+
+    <div class="field" style="margin-bottom:14px;">
+      <label for="auth-email">Email</label>
+      <input type="email" id="auth-email" placeholder="you@example.com" autocomplete="email" />
+    </div>
+
+    <div class="field" style="margin-bottom:24px;">
+      <label for="auth-pass">Password</label>
+      <input type="password" id="auth-pass" placeholder="••••••••" autocomplete="current-password" />
+    </div>
+
+    <button class="btn btn-primary" style="width:100%;" id="auth-btn">Sign in</button>
+    <div id="auth-error" style="color:#c0392b;font-size:12px;margin-top:12px;display:none;"></div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════
+     MAIN APP
+═══════════════════════════════════════════════════════════ -->
+<div id="app">
+  <div class="topbar">
+    <div class="topbar-brand">DeMARK Ads</div>
+    <div class="topbar-right">
+      <span id="user-email" style="color:var(--sub);font-size:12px;"></span>
+      <button class="btn btn-ghost btn-sm" id="signout-btn">Sign out</button>
+    </div>
+  </div>
+
+  <div class="main">
+    <div class="tabs">
+      <button class="tab-btn active" data-tab="ads">Ads</button>
+      <button class="tab-btn" data-tab="create">Create Ad</button>
+      <button class="tab-btn" data-tab="analytics">Analytics</button>
+    </div>
+
+    <!-- ── ADS TAB ─────────────────────────────────────────── -->
+    <div class="tab-panel active" id="tab-ads">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">
+        <div class="section-title" style="margin:0;">Your Ads</div>
+        <button class="btn btn-ghost btn-sm" id="refresh-ads-btn">Refresh</button>
+      </div>
+      <div class="ad-list" id="ad-list">
+        <div class="empty-state">Loading ads…</div>
+      </div>
+    </div>
+
+    <!-- ── CREATE TAB ──────────────────────────────────────── -->
+    <div class="tab-panel" id="tab-create">
+      <div class="section-title" id="form-title">New Ad</div>
+
+      <div class="form-grid">
+        <div class="field full">
+          <label for="ad-name">Ad Name</label>
+          <input type="text" id="ad-name" placeholder="e.g. DeMARK TV — June Promo" maxlength="100" />
+        </div>
+        <div class="field full">
+          <label for="ad-url">Destination URL</label>
+          <input type="url" id="ad-url" placeholder="https://example.com" />
+        </div>
+      </div>
+
+      <hr class="divider" />
+      <div style="font-size:12px;color:var(--sub);margin-bottom:12px;">
+        Upload assets for each slot. Each slot needs a mobile and desktop version. All slots are optional.
+      </div>
+
+      <!-- Banner -->
+      <div class="asset-group">
+        <div class="asset-group-header" onclick="toggleGroup('banner')">
+          <span class="asset-group-label">Banner</span>
+          <span class="asset-group-badge" id="badge-banner">Optional</span>
+        </div>
+        <div class="asset-group-body" id="group-banner">
+          <div class="field">
+            <label>Mobile</label>
+            <div class="upload-zone" id="zone-banner-mobile">
+              <div class="upload-icon">↑</div>
+              <div class="upload-label">Tap to upload</div>
+              <input type="file" accept="image/*,video/mp4,video/webm" onchange="handleFile(this,'banner_mobile')" />
+            </div>
+          </div>
+          <div class="field">
+            <label>Desktop</label>
+            <div class="upload-zone" id="zone-banner-desktop">
+              <div class="upload-icon">↑</div>
+              <div class="upload-label">Tap to upload</div>
+              <input type="file" accept="image/*,video/mp4,video/webm" onchange="handleFile(this,'banner_desktop')" />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Half Screen -->
+      <div class="asset-group">
+        <div class="asset-group-header" onclick="toggleGroup('half')">
+          <span class="asset-group-label">Half Screen</span>
+          <span class="asset-group-badge" id="badge-half">Optional</span>
+        </div>
+        <div class="asset-group-body" id="group-half">
+          <div class="field">
+            <label>Mobile</label>
+            <div class="upload-zone" id="zone-half-mobile">
+              <div class="upload-icon">↑</div>
+              <div class="upload-label">Tap to upload</div>
+              <input type="file" accept="image/*,video/mp4,video/webm" onchange="handleFile(this,'half_mobile')" />
+            </div>
+          </div>
+          <div class="field">
+            <label>Desktop</label>
+            <div class="upload-zone" id="zone-half-desktop">
+              <div class="upload-icon">↑</div>
+              <div class="upload-label">Tap to upload</div>
+              <input type="file" accept="image/*,video/mp4,video/webm" onchange="handleFile(this,'half_desktop')" />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Fullscreen -->
+      <div class="asset-group">
+        <div class="asset-group-header" onclick="toggleGroup('fullscreen')">
+          <span class="asset-group-label">Fullscreen Overlay</span>
+          <span class="asset-group-badge" id="badge-fullscreen">Optional</span>
+        </div>
+        <div class="asset-group-body" id="group-fullscreen">
+          <div class="field">
+            <label>Mobile</label>
+            <div class="upload-zone" id="zone-fullscreen-mobile">
+              <div class="upload-icon">↑</div>
+              <div class="upload-label">Tap to upload</div>
+              <input type="file" accept="image/*,video/mp4,video/webm" onchange="handleFile(this,'fullscreen_mobile')" />
+            </div>
+          </div>
+          <div class="field">
+            <label>Desktop</label>
+            <div class="upload-zone" id="zone-fullscreen-desktop">
+              <div class="upload-icon">↑</div>
+              <div class="upload-label">Tap to upload</div>
+              <input type="file" accept="image/*,video/mp4,video/webm" onchange="handleFile(this,'fullscreen_desktop')" />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="toggle-row">
+        <span class="toggle-label">Active (serve this ad)</span>
+        <input type="checkbox" class="toggle" id="ad-active" checked />
+      </div>
+
+      <div id="upload-progress" style="display:none;">
+        <div style="font-size:12px;color:var(--sub);" id="progress-label">Uploading…</div>
+        <div class="progress-bar"><div class="progress-fill" id="progress-fill"></div></div>
+      </div>
+
+      <div class="form-actions">
+        <button class="btn btn-ghost" id="cancel-edit-btn" style="display:none;" onclick="cancelEdit()">Cancel</button>
+        <button class="btn btn-primary" id="save-ad-btn" onclick="saveAd()">Save Ad</button>
+      </div>
+    </div>
+
+    <!-- ── ANALYTICS TAB ───────────────────────────────────── -->
+    <div class="tab-panel" id="tab-analytics">
+      <div class="section-title">Analytics</div>
+
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-value" id="stat-total">—</div>
+          <div class="stat-label">Total Clicks</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" id="stat-landed">—</div>
+          <div class="stat-label">Landed</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" id="stat-rate">—</div>
+          <div class="stat-label">Land Rate</div>
+        </div>
+      </div>
+
+      <div style="font-size:13px;font-weight:600;margin-bottom:12px;color:var(--text);">Recent Clicks</div>
+      <div style="overflow-x:auto;">
+        <table class="clicks-table">
+          <thead>
+            <tr>
+              <th>Ad</th>
+              <th>Site</th>
+              <th>Status</th>
+              <th>Time</th>
+            </tr>
+          </thead>
+          <tbody id="clicks-tbody">
+            <tr><td colspan="4" style="color:var(--sub);text-align:center;padding:32px;">Loading…</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div id="toast"></div>
+
+<script>
+// ═══════════════════════════════════════════════════════════
+// CONFIG — replace these two values
+// ═══════════════════════════════════════════════════════════
+const SUPABASE_URL  = "https://dnxsinundjcplzbddmtx.supabase.co";
+const SUPABASE_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRueHNpbnVuZGpjcGx6YmRkbXR4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI0MDgzNzIsImV4cCI6MjA5Nzk4NDM3Mn0.wYWlDGuDOmtlSP_QsXQnwJiaRLZKfWjWT_Ax7gXRPzU";
+// ═══════════════════════════════════════════════════════════
+
+const { createClient } = supabase;
+const sb = createClient(SUPABASE_URL, SUPABASE_ANON);
+
+// ── STATE ────────────────────────────────────────────────────
+let editingId   = null;   // UUID of ad being edited, or null
+let uploadQueue = {};     // { slot: File } — files pending upload
+let adsCache    = [];     // last loaded ads list
+
+// ── TOAST ────────────────────────────────────────────────────
+let toastTimer;
+function toast(msg, type = "ok") {
+  const el = document.getElementById("toast");
+  el.textContent = msg;
+  el.className   = "show" + (type === "error" ? " error" : "");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => { el.className = ""; }, 3500);
+}
+
+// ── TABS ─────────────────────────────────────────────────────
+document.querySelectorAll(".tab-btn").forEach(btn => {
+  btn.addEventListener("click", () => {
+    document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
+    document.querySelectorAll(".tab-panel").forEach(p => p.classList.remove("active"));
+    btn.classList.add("active");
+    document.getElementById("tab-" + btn.dataset.tab).classList.add("active");
+
+    if (btn.dataset.tab === "analytics") loadAnalytics();
+    if (btn.dataset.tab === "ads") loadAds();
+  });
+});
+
+// ── ASSET GROUP TOGGLE ────────────────────────────────────────
+function toggleGroup(name) {
+  const body = document.getElementById("group-" + name);
+  body.classList.toggle("open");
+}
+
+// ── FILE SELECTION ────────────────────────────────────────────
+function handleFile(input, slot) {
+  const file = input.files[0];
+  if (!file) return;
+
+  // 10MB limit
+  if (file.size > 10 * 1024 * 1024) {
+    toast("File too large. Max 10MB.", "error");
+    input.value = "";
+    return;
+  }
+
+  uploadQueue[slot] = file;
+  updateZone(slot, file.name);
+  updateBadge(slot);
+}
+
+function updateZone(slot, filename) {
+  const zoneId = "zone-" + slot.replace("_", "-");
+  const zone   = document.getElementById(zoneId);
+  if (!zone) return;
+  zone.classList.add("has-file");
+  const label = zone.querySelector(".upload-label");
+  if (label) label.textContent = "";
+  const existing = zone.querySelector(".upload-filename");
+  if (existing) existing.remove();
+  const nameEl = document.createElement("div");
+  nameEl.className   = "upload-filename";
+  nameEl.textContent = filename;
+  zone.appendChild(nameEl);
+}
+
+function updateBadge(slot) {
+  // slot is like "banner_mobile" or "banner_desktop"
+  const group   = slot.split("_")[0]; // "banner", "half", "fullscreen"
+  const badge   = document.getElementById("badge-" + group);
+  if (!badge) return;
+  const mobileKey  = group + "_mobile";
+  const desktopKey = group + "_desktop";
+  const filled = uploadQueue[mobileKey] || uploadQueue[desktopKey];
+  badge.className   = "asset-group-badge" + (filled ? " filled" : "");
+  badge.textContent = filled ? "Added" : "Optional";
+}
+
+// ── AUTH ─────────────────────────────────────────────────────
+document.getElementById("auth-btn").addEventListener("click", async () => {
+  const email = document.getElementById("auth-email").value.trim();
+  const pass  = document.getElementById("auth-pass").value;
+  const errEl = document.getElementById("auth-error");
+  const btn   = document.getElementById("auth-btn");
+
+  errEl.style.display = "none";
+  btn.disabled        = true;
+  btn.textContent     = "Signing in…";
+
+  const { error } = await sb.auth.signInWithPassword({ email, password: pass });
+
+  btn.disabled    = false;
+  btn.textContent = "Sign in";
+
+  if (error) {
+    errEl.textContent    = error.message;
+    errEl.style.display  = "block";
+    return;
+  }
+
+  showApp(email);
+});
+
+// Enter key on password field
+document.getElementById("auth-pass").addEventListener("keydown", e => {
+  if (e.key === "Enter") document.getElementById("auth-btn").click();
+});
+
+document.getElementById("signout-btn").addEventListener("click", async () => {
+  await sb.auth.signOut();
+  document.getElementById("app").style.display          = "none";
+  document.getElementById("auth-screen").style.display  = "flex";
+});
+
+async function checkSession() {
+  const { data: { session } } = await sb.auth.getSession();
+  if (session) {
+    showApp(session.user.email);
+  }
+}
+
+function showApp(email) {
+  document.getElementById("auth-screen").style.display = "none";
+  document.getElementById("app").style.display         = "block";
+  document.getElementById("user-email").textContent    = email;
+  loadAds();
+}
+
+// ── LOAD ADS ──────────────────────────────────────────────────
+async function loadAds() {
+  const list = document.getElementById("ad-list");
+  list.innerHTML = '<div class="empty-state">Loading…</div>';
+
+  const { data, error } = await sb
+    .from("ads")
+    .select("*")
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    list.innerHTML = `<div class="empty-state" style="color:var(--danger);">Failed to load ads: ${error.message}</div>`;
+    return;
+  }
+
+  adsCache = data || [];
+
+  if (adsCache.length === 0) {
+    list.innerHTML = '<div class="empty-state">No ads yet. Create your first ad.</div>';
+    return;
+  }
+
+  list.innerHTML = "";
+  adsCache.forEach(ad => list.appendChild(buildAdCard(ad)));
+}
+
+document.getElementById("refresh-ads-btn").addEventListener("click", loadAds);
+
+// ── AD CARD ───────────────────────────────────────────────────
+const SLOTS = [
+  ["banner_mobile",      "Banner M"],
+  ["banner_desktop",     "Banner D"],
+  ["half_mobile",        "Half M"],
+  ["half_desktop",       "Half D"],
+  ["fullscreen_mobile",  "FS M"],
+  ["fullscreen_desktop", "FS D"],
+];
+
+function buildAdCard(ad) {
+  const card = document.createElement("div");
+  card.className = "ad-card" + (ad.active ? "" : " inactive");
+
+  const statusClass = ad.active ? "" : " inactive";
+  const statusText  = ad.active ? "Active" : "Inactive";
+
+  const pills = SLOTS.map(([key, label]) =>
+    `<span class="slot-pill${ad[key] ? " filled" : ""}">${label}</span>`
+  ).join("");
+
+  card.innerHTML = `
+    <div class="ad-card-top">
+      <div>
+        <div class="ad-card-name">${escHtml(ad.name)}</div>
+        <div class="ad-card-url">${escHtml(ad.click_url)}</div>
+      </div>
+      <div class="ad-card-actions">
+        <span class="ad-status${statusClass}">${statusText}</span>
+        <button class="btn btn-ghost btn-sm" onclick="editAd('${ad.id}')">Edit</button>
+        <button class="btn btn-danger btn-sm" onclick="deleteAd('${ad.id}', this)">Delete</button>
+      </div>
+    </div>
+    <div class="ad-card-slots">${pills}</div>
+  `;
+
+  return card;
+}
+
+function escHtml(str) {
+  return String(str)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
+// ── EDIT ──────────────────────────────────────────────────────
+function editAd(id) {
+  const ad = adsCache.find(a => a.id === id);
+  if (!ad) return;
+
+  editingId = id;
+  clearForm();
+
+  document.getElementById("ad-name").value    = ad.name;
+  document.getElementById("ad-url").value     = ad.click_url;
+  document.getElementById("ad-active").checked = ad.active;
+  document.getElementById("form-title").textContent = "Edit Ad";
+  document.getElementById("cancel-edit-btn").style.display = "inline-flex";
+
+  // Show existing asset URLs in zones
+  SLOTS.forEach(([key]) => {
+    if (ad[key]) {
+      const filename = ad[key].split("/").pop().split("?")[0];
+      updateZone(key, "Current: " + filename);
+      updateBadge(key);
+    }
+  });
+
+  // Switch to create tab
+  document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
+  document.querySelectorAll(".tab-panel").forEach(p => p.classList.remove("active"));
+  document.querySelector('[data-tab="create"]').classList.add("active");
+  document.getElementById("tab-create").classList.add("active");
+}
+
+function cancelEdit() {
+  editingId = null;
+  clearForm();
+  document.getElementById("form-title").textContent        = "New Ad";
+  document.getElementById("cancel-edit-btn").style.display = "none";
+}
+
+// ── DELETE ────────────────────────────────────────────────────
+async function deleteAd(id, btn) {
+  if (!confirm("Delete this ad? This cannot be undone.")) return;
+
+  btn.disabled    = true;
+  btn.textContent = "Deleting…";
+
+  const { error } = await sb.from("ads").delete().eq("id", id);
+
+  if (error) {
+    toast("Delete failed: " + error.message, "error");
+    btn.disabled    = false;
+    btn.textContent = "Delete";
+    return;
+  }
+
+  toast("Ad deleted.");
+  loadAds();
+}
+
+// ── SAVE AD ───────────────────────────────────────────────────
+async function saveAd() {
+  const name     = document.getElementById("ad-name").value.trim();
+  const clickUrl = document.getElementById("ad-url").value.trim();
+  const active   = document.getElementById("ad-active").checked;
+
+  // Basic validation
+  if (!name) { toast("Ad name is required.", "error"); return; }
+  if (!clickUrl) { toast("Destination URL is required.", "error"); return; }
+  if (!/^https?:\/\//i.test(clickUrl)) {
+    toast("URL must start with http:// or https://", "error");
+    return;
+  }
+
+  const btn = document.getElementById("save-ad-btn");
+  btn.disabled    = true;
+  btn.innerHTML   = '<span class="spinner"></span> Saving…';
+
+  try {
+    // 1. Upload any new files
+    const assetUrls = {};
+    const fileSlots = Object.keys(uploadQueue);
+
+    if (fileSlots.length > 0) {
+      showProgress(0);
+      let done = 0;
+
+      for (const slot of fileSlots) {
+        const file = uploadQueue[slot];
+        const ext  = file.name.split(".").pop();
+        const path = `ads/${editingId || "new_" + Date.now()}/${slot}.${ext}`;
+
+        document.getElementById("progress-label").textContent = `Uploading ${slot}…`;
+
+        const { error: upErr } = await sb.storage
+          .from("ad-assets")
+          .upload(path, file, { upsert: true, contentType: file.type });
+
+        if (upErr) throw new Error(`Upload failed for ${slot}: ${upErr.message}`);
+
+        const { data: urlData } = sb.storage.from("ad-assets").getPublicUrl(path);
+        assetUrls[slot] = urlData.publicUrl;
+
+        done++;
+        showProgress(Math.round((done / fileSlots.length) * 100));
+      }
+
+      hideProgress();
+    }
+
+    // 2. If editing, merge existing URLs with new ones
+    let finalUrls = { ...assetUrls };
+
+    if (editingId) {
+      const existing = adsCache.find(a => a.id === editingId);
+      if (existing) {
+        SLOTS.forEach(([key]) => {
+          if (!finalUrls[key] && existing[key]) finalUrls[key] = existing[key];
+        });
+      }
+    }
+
+    // 3. Build the row
+    const row = {
+      name,
+      click_url: clickUrl,
+      active,
+      ...finalUrls,
+    };
+
+    // 4. Insert or update
+    let dbError;
+    if (editingId) {
+      ({ error: dbError } = await sb.from("ads").update(row).eq("id", editingId));
+    } else {
+      ({ error: dbError } = await sb.from("ads").insert(row));
+    }
+
+    if (dbError) throw new Error(dbError.message);
+
+    toast(editingId ? "Ad updated." : "Ad created.");
+    cancelEdit();
+
+    // Switch to ads tab
+    document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
+    document.querySelectorAll(".tab-panel").forEach(p => p.classList.remove("active"));
+    document.querySelector('[data-tab="ads"]').classList.add("active");
+    document.getElementById("tab-ads").classList.add("active");
+    loadAds();
+
+  } catch (err) {
+    toast(err.message, "error");
+  } finally {
+    btn.disabled    = false;
+    btn.textContent = "Save Ad";
+  }
+}
+
+// ── FORM HELPERS ──────────────────────────────────────────────
+function clearForm() {
+  document.getElementById("ad-name").value  = "";
+  document.getElementById("ad-url").value   = "";
+  document.getElementById("ad-active").checked = true;
+  uploadQueue = {};
+
+  SLOTS.forEach(([key]) => {
+    const zoneId = "zone-" + key.replace("_", "-");
+    const zone   = document.getElementById(zoneId);
+    if (!zone) return;
+    zone.classList.remove("has-file");
+    const fn = zone.querySelector(".upload-filename");
+    if (fn) fn.remove();
+    const label = zone.querySelector(".upload-label");
+    if (label) label.textContent = "Tap to upload";
+    const input = zone.querySelector("input[type=file]");
+    if (input) input.value = "";
+  });
+
+  ["banner", "half", "fullscreen"].forEach(g => {
+    const badge = document.getElementById("badge-" + g);
+    if (badge) { badge.className = "asset-group-badge"; badge.textContent = "Optional"; }
+    const body = document.getElementById("group-" + g);
+    if (body) body.classList.remove("open");
+  });
+}
+
+function showProgress(pct) {
+  document.getElementById("upload-progress").style.display = "block";
+  document.getElementById("progress-fill").style.width     = pct + "%";
+}
+
+function hideProgress() {
+  setTimeout(() => {
+    document.getElementById("upload-progress").style.display = "none";
+    document.getElementById("progress-fill").style.width     = "0%";
+  }, 600);
+}
+
+// ── ANALYTICS ─────────────────────────────────────────────────
+async function loadAnalytics() {
+  // Load stats
+  const { data: clicks, error } = await sb
+    .from("clicks")
+    .select("id, ad_id, site_id, status, initiated_at")
+    .order("initiated_at", { ascending: false })
+    .limit(100);
+
+  if (error) {
+    toast("Failed to load analytics.", "error");
+    return;
+  }
+
+  const total  = clicks.length;
+  const landed = clicks.filter(c => c.status === "landed").length;
+  const rate   = total > 0 ? Math.round((landed / total) * 100) + "%" : "—";
+
+  document.getElementById("stat-total").textContent  = total;
+  document.getElementById("stat-landed").textContent = landed;
+  document.getElementById("stat-rate").textContent   = rate;
+
+  const tbody = document.getElementById("clicks-tbody");
+  if (clicks.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="4" style="color:var(--sub);text-align:center;padding:32px;">No clicks yet.</td></tr>';
+    return;
+  }
+
+  // Build ad name lookup from cache
+  const adMap = {};
+  adsCache.forEach(a => { adMap[a.id] = a.name; });
+
+  tbody.innerHTML = clicks.map(c => `
+    <tr>
+      <td>${escHtml(adMap[c.ad_id] || c.ad_id.slice(0,8) + "…")}</td>
+      <td>${escHtml(c.site_id)}</td>
+      <td style="color:${c.status === "landed" ? "var(--success)" : "var(--sub)"}">
+        ${c.status}
+      </td>
+      <td style="color:var(--sub);">${new Date(c.initiated_at).toLocaleString()}</td>
+    </tr>
+  `).join("");
+}
+
+// ── INIT ──────────────────────────────────────────────────────
+checkSession();
+</script>
+</body>
+</html>
